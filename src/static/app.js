@@ -65,14 +65,14 @@ document.addEventListener("DOMContentLoaded", () => {
       document.documentElement.setAttribute("data-theme", "dark");
       themeIcon.textContent = "☀️";
     } else {
-      document.documentElement.setAttribute("data-theme", "light");
+      document.documentElement.removeAttribute("data-theme");
       themeIcon.textContent = "🌙";
     }
     localStorage.setItem("theme", theme);
   }
 
   function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute("data-theme");
+    const currentTheme = localStorage.getItem("theme") || "light";
     const newTheme = currentTheme === "dark" ? "light" : "dark";
     setTheme(newTheme);
   }
