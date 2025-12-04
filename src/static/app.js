@@ -472,6 +472,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Helper function to escape HTML to prevent XSS
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   // Function to render a single activity card
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
@@ -553,7 +560,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </ul>
       </div>
       <div class="share-section">
-        <button class="share-button tooltip" data-activity="${name}" data-description="${details.description.replace(/"/g, '&quot;')}" data-schedule="${formattedSchedule.replace(/"/g, '&quot;')}">
+        <button class="share-button tooltip" data-activity="${escapeHtml(name)}" data-description="${escapeHtml(details.description)}" data-schedule="${escapeHtml(formattedSchedule)}">
           <span class="share-icon">🔗</span>
           <span>Share</span>
           <span class="tooltip-text">Share this activity with friends</span>
@@ -990,11 +997,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // Copy link
     const copyBtn = document.getElementById("share-copy");
     copyBtn.onclick = () => {
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        showShareMessage("Link copied to clipboard!", "success");
-      }).catch(() => {
-        showShareMessage("Failed to copy link", "error");
-      });
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          showShareMessage("Link copied to clipboard!", "success");
+        }).catch(() => {
+          // Fallback to older method
+          copyToClipboardFallback(shareUrl);
+        });
+      } else {
+        // Use fallback for browsers without clipboard API
+        copyToClipboardFallback(shareUrl);
+      }
     };
 
     // Show modal
@@ -1002,6 +1016,29 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
       shareModal.classList.add("show");
     }, 10);
+  }
+
+  // Fallback method for copying to clipboard
+  function copyToClipboardFallback(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+    
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        showShareMessage("Link copied to clipboard!", "success");
+      } else {
+        showShareMessage("Please copy the link manually: " + text, "error");
+      }
+    } catch (err) {
+      showShareMessage("Unable to copy. Please copy manually: " + text, "error");
+    }
+    
+    document.body.removeChild(textArea);
   }
 
   // Show message in share modal
